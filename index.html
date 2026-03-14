@@ -569,7 +569,7 @@ async function loadNotes(i, noteFile) {
   }
 
   try {
-    const res = await fetch(noteFile);
+    const res = await fetch(noteFile + '?t=' + Date.now());
     if (!res.ok) return;
     const md = await res.text();
     notesCache[noteFile] = md;
