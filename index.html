@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Italie 2026 — Notre voyage</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf8f5;
+      --card: #ffffff;
+      --accent: #b5543a;
+      --accent-light: #e8c4b8;
+      --text: #2c2c2c;
+      --text-muted: #7a7a7a;
+      --border: #e8e4df;
+      --shadow: 0 2px 12px rgba(0,0,0,.08);
+      --bike: #2d7a4f;
+      --flight: #3b6fa0;
+      --train: #8b6914;
+      --bus: #7a4a8c;
+      --visit: #b5543a;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+      background: linear-gradient(135deg, #3b2f2f 0%, #5a3e36 50%, #6b4c3b 100%);
+      color: #fff;
+      position: relative;
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 48px;
+      height: 48px;
+      background: var(--bg);
+      border-radius: 50%;
+      border: 4px solid var(--accent);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23b5543a'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 24px;
+    }
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+    header p {
+      margin-top: .5rem;
+      font-size: 1.05rem;
+      opacity: .85;
+      font-weight: 300;
+    }
+
+    /* ── Stats bar ── */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      padding: 2.5rem 1rem 1.5rem;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .stat-label {
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-muted);
+      margin-top: .15rem;
+    }
+
+    /* ── Layout ── */
+    .container {
+      display: flex;
+      gap: 0;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    @media (max-width: 900px) {
+      .container { flex-direction: column; }
+    }
+
+    /* ── Map ── */
+    .map-wrap {
+      flex: 1;
+      min-height: 500px;
+      position: sticky;
+      top: 1rem;
+      align-self: flex-start;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    #map { width: 100%; height: 600px; }
+    @media (max-width: 900px) {
+      .map-wrap {
+        position: relative;
+        top: 0;
+        min-height: 0;
+        width: 100%;
+        flex: none;
+      }
+      #map { height: 45vh; min-height: 280px; }
+    }
+
+    /* ── Timeline ── */
+    .timeline {
+      flex: 1;
+      padding: 0 1rem 2rem 2rem;
+      max-width: 560px;
+    }
+    @media (max-width: 900px) {
+      .timeline { max-width: 100%; padding: 1rem 0 2rem; }
+    }
+
+    .day-card {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.1rem 1.2rem;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      transition: box-shadow .2s, transform .15s, border-color .2s;
+    }
+    .day-card:hover {
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+    .day-card.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-light), var(--shadow);
+    }
+
+    /* left accent bar */
+    .day-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 12px; bottom: 12px;
+      width: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      transition: background .2s;
+    }
+    .day-card.active::before { background: var(--accent); }
+    .day-card.type-bike::before { background: var(--bike); }
+    .day-card.type-flight::before { background: var(--flight); }
+    .day-card.type-train::before { background: var(--train); }
+    .day-card.type-bus::before { background: var(--bus); }
+    .day-card.type-visit::before { background: var(--visit); }
+
+    .day-date {
+      font-size: .78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 500;
+    }
+    .day-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: .25rem 0;
+    }
+    .day-badges {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin: .4rem 0;
+    }
+    .badge {
+      font-size: .72rem;
+      padding: .2rem .55rem;
+      border-radius: 20px;
+      font-weight: 500;
+      letter-spacing: .02em;
+    }
+    .badge-bike { background: #e6f4ec; color: var(--bike); }
+    .badge-flight { background: #e3eef7; color: var(--flight); }
+    .badge-train { background: #f5eed8; color: var(--train); }
+    .badge-bus { background: #f0e6f5; color: var(--bus); }
+    .badge-visit { background: #fae8e2; color: var(--visit); }
+
+    .day-details {
+      font-size: .85rem;
+      color: var(--text-muted);
+      margin-top: .35rem;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: .8rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Leaflet popup ── */
+    .leaflet-popup-content-wrapper {
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+    }
+    .leaflet-popup-content { font-size: .85rem; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Italie 2026</h1>
+  <p>Puglia a velo &middot; 17 avril &ndash; 1<sup>er</sup> mai</p>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="stat-value">15</div><div class="stat-label">Jours</div></div>
+  <div class="stat"><div class="stat-value">~509</div><div class="stat-label">km a velo</div></div>
+  <div class="stat"><div class="stat-value">~3 665</div><div class="stat-label">m denivele +</div></div>
+  <div class="stat"><div class="stat-value">8</div><div class="stat-label">Etapes velo</div></div>
+  <div class="stat"><div class="stat-value">6</div><div class="stat-label">Villes</div></div>
+</div>
+
+<div class="container">
+  <div class="map-wrap">
+    <div id="map"></div>
+  </div>
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<footer>Italie 2026 &mdash; Voyage planifie avec soin</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── Data ──
+const days = [
+  {
+    date: "Ven 17 avril", title: "Montreal → Rome",
+    type: "flight", badges: ["flight"],
+    details: "Vol Air Canada AC 892, YUL → FCO, 19 h 10 → 18 avr 9 h 15.",
+    coords: [[45.5017, -73.5673], [41.9028, 12.4964]],
+    center: [46.0, -30.0], zoom: 3
+  },
+  {
+    date: "Sam 18 avril", title: "Rome → Bari",
+    type: "flight", badges: ["flight"],
+    details: "Vol ITA 1613 FCO → BRI 13 h 30–14 h 35. Nuit : Dilman Luxury Stay, Bari.",
+    coords: [[41.9028, 12.4964], [41.1171, 16.8719]],
+    center: [41.5, 14.7], zoom: 7
+  },
+  {
+    date: "Dim 19 avril — Jour 1", title: "Bari → Matera",
+    type: "bus", badges: ["bus"],
+    details: "Bus Bari–Matera. Installation, visite des Sassi. Nuit a Matera.",
+    coords: [[41.1171, 16.8719], [40.6664, 16.6044]],
+    center: [40.89, 16.74], zoom: 10
+  },
+  {
+    date: "Lun 20 avril — Jour 2", title: "Matera → Alberobello",
+    type: "bike", badges: ["bike"],
+    details: "76 km · +650 m. Nuit a Alberobello.",
+    distance: 76, elevation: 650,
+    coords: [[40.6664, 16.6044], [40.7854, 17.2370]],
+    center: [40.72, 16.92], zoom: 10
+  },
+  {
+    date: "Mar 21 avril — Jour 3", title: "Alberobello → Ostuni",
+    type: "bike", badges: ["bike"],
+    details: "52 km · +600 m. Nuit a Ostuni.",
+    distance: 52, elevation: 600,
+    coords: [[40.7854, 17.2370], [40.7296, 17.5775]],
+    center: [40.76, 17.41], zoom: 11
+  },
+  {
+    date: "Mer 22 avril — Jour 4", title: "Ostuni → Manduria",
+    type: "bike", badges: ["bike"],
+    details: "70 km · +250 m. Nuit a Manduria.",
+    distance: 70, elevation: 250,
+    coords: [[40.7296, 17.5775], [40.3993, 17.6368]],
+    center: [40.56, 17.61], zoom: 10
+  },
+  {
+    date: "Jeu 23 avril — Jour 5", title: "Manduria → Gallipoli",
+    type: "bike", badges: ["bike"],
+    details: "70 km · +350 m. Nuit a Gallipoli.",
+    distance: 70, elevation: 350,
+    coords: [[40.3993, 17.6368], [40.0554, 17.9929]],
+    center: [40.23, 17.81], zoom: 10
+  },
+  {
+    date: "Ven 24 avril — Jour 6", title: "Gallipoli → Santa Maria di Leuca",
+    type: "bike", badges: ["bike"],
+    details: "52–75 km · +230–530 m. Nuit a Santa Maria di Leuca.",
+    distance: 63, elevation: 380,
+    coords: [[40.0554, 17.9929], [39.7986, 18.3557]],
+    center: [39.93, 18.17], zoom: 10
+  },
+  {
+    date: "Sam 25 avril — Jour 7", title: "Santa Maria di Leuca → Otranto",
+    type: "bike", badges: ["bike"],
+    details: "63 km · +650 m. Nuit a Otranto.",
+    distance: 63, elevation: 650,
+    coords: [[39.7986, 18.3557], [40.1466, 18.4914]],
+    center: [39.97, 18.42], zoom: 10
+  },
+  {
+    date: "Dim 26 avril — Jour 8", title: "Otranto → Lecce",
+    type: "bike", badges: ["bike"],
+    details: "56 km · +285 m. Nuit a Lecce.",
+    distance: 56, elevation: 285,
+    coords: [[40.1466, 18.4914], [40.3516, 18.1750]],
+    center: [40.25, 18.33], zoom: 10
+  },
+  {
+    date: "Lun 27 avril — Jour 9", title: "Lecce → Naples",
+    type: "train", badges: ["train"],
+    details: "Fin apres dejeuner. Train Lecce → Napoli Centrale (~5 h 30–6 h). Nuit : Starhotels Terminus.",
+    coords: [[40.3516, 18.1750], [40.8518, 14.2681]],
+    center: [40.6, 16.2], zoom: 7
+  },
+  {
+    date: "Mar 28 avril", title: "Naples → Rome",
+    type: "train", badges: ["train"],
+    details: "Train Naples → Rome. Installation Hotel Ponte Sisto.",
+    coords: [[40.8518, 14.2681], [41.9028, 12.4964]],
+    center: [41.4, 13.4], zoom: 7
+  },
+  {
+    date: "Mer 29 avril", title: "Rome",
+    type: "visit", badges: ["visit"],
+    details: "Journee libre a Rome. Nuit Hotel Ponte Sisto.",
+    coords: [[41.9028, 12.4964]],
+    center: [41.9028, 12.4964], zoom: 13
+  },
+  {
+    date: "Jeu 30 avril", title: "Rome",
+    type: "visit", badges: ["visit"],
+    details: "Journee libre a Rome. Nuit Hotel Ponte Sisto.",
+    coords: [[41.9028, 12.4964]],
+    center: [41.9028, 12.4964], zoom: 13
+  },
+  {
+    date: "Ven 1 mai", title: "Rome → Montreal",
+    type: "flight", badges: ["flight"],
+    details: "Vol Air Canada AC 893, FCO → YUL, 11 h 30 → 14 h 15.",
+    coords: [[41.9028, 12.4964], [45.5017, -73.5673]],
+    center: [46.0, -30.0], zoom: 3
+  }
+];
+
+const badgeLabels = {
+  bike: "Velo", flight: "Vol", train: "Train", bus: "Bus", visit: "Visite"
+};
+const badgeClasses = {
+  bike: "badge-bike", flight: "badge-flight", train: "badge-train",
+  bus: "badge-bus", visit: "badge-visit"
+};
+const lineColors = {
+  bike: "#2d7a4f", flight: "#3b6fa0", train: "#8b6914",
+  bus: "#7a4a8c", visit: "#b5543a"
+};
+
+// ── Map ──
+const map = L.map('map', { zoomControl: true, scrollWheelZoom: true });
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  maxZoom: 19
+}).addTo(map);
+
+// Fit to the Puglia cycling region by default
+map.setView([40.5, 17.0], 7);
+
+// All route lines
+const allLines = [];
+const allMarkers = [];
+
+function createIcon(type) {
+  const colors = { bike: '#2d7a4f', flight: '#3b6fa0', train: '#8b6914', bus: '#7a4a8c', visit: '#b5543a' };
+  const icons = { bike: '🚴', flight: '✈️', train: '🚆', bus: '🚌', visit: '📍' };
+  const color = colors[type] || '#b5543a';
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      background:${color}; color:#fff; width:30px; height:30px;
+      border-radius:50%; display:flex; align-items:center; justify-content:center;
+      font-size:15px; box-shadow:0 2px 6px rgba(0,0,0,.3); border:2px solid #fff;
+    ">${icons[type] || '📍'}</div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    popupAnchor: [0, -18]
+  });
+}
+
+// Draw the full route overview
+days.forEach((d, i) => {
+  if (d.coords.length === 2) {
+    const line = L.polyline(d.coords, {
+      color: lineColors[d.type],
+      weight: d.type === 'bike' ? 4 : 3,
+      opacity: 0.7,
+      dashArray: d.type === 'flight' ? '8 8' : d.type === 'train' ? '6 4' : d.type === 'bus' ? '4 6' : null
+    }).addTo(map);
+    allLines.push(line);
+  }
+  // Marker at destination (last coord)
+  const dest = d.coords[d.coords.length - 1];
+  const marker = L.marker(dest, { icon: createIcon(d.type) })
+    .bindPopup(`<strong>${d.title}</strong><br>${d.details}`)
+    .addTo(map);
+  allMarkers.push(marker);
+});
+
+// Fit all markers
+if (allMarkers.length) {
+  const group = L.featureGroup(allMarkers);
+  map.fitBounds(group.getBounds().pad(0.1));
+}
+
+// Ensure Leaflet recalculates container size (fixes mobile)
+setTimeout(() => map.invalidateSize(), 200);
+
+// ── Timeline ──
+const timeline = document.getElementById('timeline');
+
+days.forEach((d, i) => {
+  const card = document.createElement('div');
+  card.className = `day-card type-${d.type}`;
+  card.dataset.index = i;
+
+  const badgesHtml = d.badges.map(b =>
+    `<span class="badge ${badgeClasses[b]}">${badgeLabels[b]}</span>`
+  ).join('');
+
+  const distHtml = d.distance
+    ? `<span class="badge badge-bike">${d.distance} km</span><span class="badge badge-bike">+${d.elevation} m</span>`
+    : '';
+
+  card.innerHTML = `
+    <div class="day-date">${d.date}</div>
+    <div class="day-title">${d.title}</div>
+    <div class="day-badges">${badgesHtml}${distHtml}</div>
+    <div class="day-details">${d.details}</div>
+  `;
+
+  card.addEventListener('click', () => selectDay(i));
+  timeline.appendChild(card);
+});
+
+let activeIndex = -1;
+let activeHighlightLine = null;
+
+function selectDay(i) {
+  // Toggle
+  if (activeIndex === i) {
+    deselectAll();
+    return;
+  }
+  activeIndex = i;
+  const d = days[i];
+
+  // Cards
+  document.querySelectorAll('.day-card').forEach((c, ci) => {
+    c.classList.toggle('active', ci === i);
+  });
+
+  // Remove old highlight
+  if (activeHighlightLine) { map.removeLayer(activeHighlightLine); activeHighlightLine = null; }
+
+  // Instant view change (no animation = no SVG glitch)
+  map.setView(d.center, d.zoom, { animate: false });
+
+  // Add highlight line after view is set
+  if (d.coords.length === 2) {
+    activeHighlightLine = L.polyline(d.coords, {
+      color: lineColors[d.type],
+      weight: 6,
+      opacity: 1
+    }).addTo(map);
+  }
+
+  // Open popup
+  allMarkers[i].openPopup();
+}
+
+function deselectAll() {
+  activeIndex = -1;
+  document.querySelectorAll('.day-card').forEach(c => c.classList.remove('active'));
+  if (activeHighlightLine) { map.removeLayer(activeHighlightLine); activeHighlightLine = null; }
+  map.closePopup();
+  if (allMarkers.length) {
+    const group = L.featureGroup(allMarkers);
+    map.fitBounds(group.getBounds().pad(0.1));
+  }
+}
+</script>
+
+</body>
+</html>
