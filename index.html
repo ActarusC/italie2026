@@ -212,6 +212,36 @@
       margin-top: .35rem;
     }
 
+    /* ── Notes ── */
+    .day-notes {
+      display: none;
+      margin-top: .75rem;
+      padding-top: .75rem;
+      border-top: 1px dashed var(--border);
+    }
+    .day-card.active .day-notes.loaded { display: block; }
+    .day-notes h1 { display: none; }
+    .day-notes h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: .6rem 0 .25rem;
+    }
+    .day-notes h2:first-child { margin-top: 0; }
+    .day-notes p, .day-notes li {
+      font-size: .82rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+    .day-notes ul { padding-left: 1.2rem; margin: .2rem 0; }
+    .day-notes a { color: var(--accent); text-decoration: underline; }
+    .day-notes-empty {
+      font-size: .8rem;
+      color: var(--border);
+      font-style: italic;
+    }
+
     /* ── Footer ── */
     footer {
       text-align: center;
@@ -254,6 +284,7 @@
 <footer>Italie 2026 &mdash; Voyage planifie avec soin</footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/marked@15.0.7/marked.min.js"></script>
 <script>
 // ── Data ──
 const days = [
@@ -261,6 +292,7 @@ const days = [
     date: "Ven 17 avril", title: "Montreal → Rome",
     type: "flight", badges: ["flight"],
     details: "Vol Air Canada AC 892, YUL → FCO, 19 h 10 → 18 avr 9 h 15.",
+    noteFile: "notes/01-montreal-rome.md",
     coords: [[45.5017, -73.5673], [41.9028, 12.4964]],
     center: [46.0, -30.0], zoom: 3
   },
@@ -268,6 +300,7 @@ const days = [
     date: "Sam 18 avril", title: "Rome → Bari",
     type: "flight", badges: ["flight"],
     details: "Vol ITA 1613 FCO → BRI 13 h 30–14 h 35. Nuit : Dilman Luxury Stay, Bari.",
+    noteFile: "notes/02-rome-bari.md",
     coords: [[41.9028, 12.4964], [41.1171, 16.8719]],
     center: [41.5, 14.7], zoom: 7
   },
@@ -275,6 +308,7 @@ const days = [
     date: "Dim 19 avril — Jour 1", title: "Bari → Matera",
     type: "bus", badges: ["bus"],
     details: "Bus Bari–Matera. Installation, visite des Sassi. Nuit a Matera.",
+    noteFile: "notes/03-bari-matera.md",
     coords: [[41.1171, 16.8719], [40.6664, 16.6044]],
     center: [40.89, 16.74], zoom: 10
   },
@@ -283,6 +317,7 @@ const days = [
     type: "bike", badges: ["bike"],
     details: "76 km · +650 m. Nuit a Alberobello.",
     distance: 76, elevation: 650,
+    noteFile: "notes/04-matera-alberobello.md",
     coords: [[40.6664, 16.6044], [40.7854, 17.2370]],
     center: [40.72, 16.92], zoom: 10
   },
@@ -291,6 +326,7 @@ const days = [
     type: "bike", badges: ["bike"],
     details: "52 km · +600 m. Nuit a Ostuni.",
     distance: 52, elevation: 600,
+    noteFile: "notes/05-alberobello-ostuni.md",
     coords: [[40.7854, 17.2370], [40.7296, 17.5775]],
     center: [40.76, 17.41], zoom: 11
   },
@@ -299,6 +335,7 @@ const days = [
     type: "bike", badges: ["bike"],
     details: "70 km · +250 m. Nuit a Manduria.",
     distance: 70, elevation: 250,
+    noteFile: "notes/06-ostuni-manduria.md",
     coords: [[40.7296, 17.5775], [40.3993, 17.6368]],
     center: [40.56, 17.61], zoom: 10
   },
@@ -307,6 +344,7 @@ const days = [
     type: "bike", badges: ["bike"],
     details: "70 km · +350 m. Nuit a Gallipoli.",
     distance: 70, elevation: 350,
+    noteFile: "notes/07-manduria-gallipoli.md",
     coords: [[40.3993, 17.6368], [40.0554, 17.9929]],
     center: [40.23, 17.81], zoom: 10
   },
@@ -315,6 +353,7 @@ const days = [
     type: "bike", badges: ["bike"],
     details: "52–75 km · +230–530 m. Nuit a Santa Maria di Leuca.",
     distance: 63, elevation: 380,
+    noteFile: "notes/08-gallipoli-santa-maria-di-leuca.md",
     coords: [[40.0554, 17.9929], [39.7986, 18.3557]],
     center: [39.93, 18.17], zoom: 10
   },
@@ -323,6 +362,7 @@ const days = [
     type: "bike", badges: ["bike"],
     details: "63 km · +650 m. Nuit a Otranto.",
     distance: 63, elevation: 650,
+    noteFile: "notes/09-santa-maria-di-leuca-otranto.md",
     coords: [[39.7986, 18.3557], [40.1466, 18.4914]],
     center: [39.97, 18.42], zoom: 10
   },
@@ -331,6 +371,7 @@ const days = [
     type: "bike", badges: ["bike"],
     details: "56 km · +285 m. Nuit a Lecce.",
     distance: 56, elevation: 285,
+    noteFile: "notes/10-otranto-lecce.md",
     coords: [[40.1466, 18.4914], [40.3516, 18.1750]],
     center: [40.25, 18.33], zoom: 10
   },
@@ -338,6 +379,7 @@ const days = [
     date: "Lun 27 avril — Jour 9", title: "Lecce → Naples",
     type: "train", badges: ["train"],
     details: "Fin apres dejeuner. Train Lecce → Napoli Centrale (~5 h 30–6 h). Nuit : Starhotels Terminus.",
+    noteFile: "notes/11-lecce-naples.md",
     coords: [[40.3516, 18.1750], [40.8518, 14.2681]],
     center: [40.6, 16.2], zoom: 7
   },
@@ -345,6 +387,7 @@ const days = [
     date: "Mar 28 avril", title: "Naples → Rome",
     type: "train", badges: ["train"],
     details: "Train Naples → Rome. Installation Hotel Ponte Sisto.",
+    noteFile: "notes/12-naples-rome.md",
     coords: [[40.8518, 14.2681], [41.9028, 12.4964]],
     center: [41.4, 13.4], zoom: 7
   },
@@ -352,6 +395,7 @@ const days = [
     date: "Mer 29 avril", title: "Rome",
     type: "visit", badges: ["visit"],
     details: "Journee libre a Rome. Nuit Hotel Ponte Sisto.",
+    noteFile: "notes/13-rome-jour-1.md",
     coords: [[41.9028, 12.4964]],
     center: [41.9028, 12.4964], zoom: 13
   },
@@ -359,6 +403,7 @@ const days = [
     date: "Jeu 30 avril", title: "Rome",
     type: "visit", badges: ["visit"],
     details: "Journee libre a Rome. Nuit Hotel Ponte Sisto.",
+    noteFile: "notes/14-rome-jour-2.md",
     coords: [[41.9028, 12.4964]],
     center: [41.9028, 12.4964], zoom: 13
   },
@@ -366,6 +411,7 @@ const days = [
     date: "Ven 1 mai", title: "Rome → Montreal",
     type: "flight", badges: ["flight"],
     details: "Vol Air Canada AC 893, FCO → YUL, 11 h 30 → 14 h 15.",
+    noteFile: "notes/15-rome-montreal.md",
     coords: [[41.9028, 12.4964], [45.5017, -73.5673]],
     center: [46.0, -30.0], zoom: 3
   }
@@ -463,6 +509,7 @@ days.forEach((d, i) => {
     <div class="day-title">${d.title}</div>
     <div class="day-badges">${badgesHtml}${distHtml}</div>
     <div class="day-details">${d.details}</div>
+    <div class="day-notes" id="notes-${i}"></div>
   `;
 
   card.addEventListener('click', () => selectDay(i));
@@ -503,6 +550,42 @@ function selectDay(i) {
 
   // Open popup
   allMarkers[i].openPopup();
+
+  // Load notes
+  loadNotes(i, d.noteFile);
+}
+
+// ── Notes loading ──
+const notesCache = {};
+
+async function loadNotes(i, noteFile) {
+  const el = document.getElementById('notes-' + i);
+  if (!el || !noteFile) return;
+  if (el.classList.contains('loaded')) return;
+
+  if (notesCache[noteFile]) {
+    renderNotes(el, notesCache[noteFile]);
+    return;
+  }
+
+  try {
+    const res = await fetch(noteFile);
+    if (!res.ok) return;
+    const md = await res.text();
+    notesCache[noteFile] = md;
+    renderNotes(el, md);
+  } catch (e) { /* silently fail */ }
+}
+
+function renderNotes(el, md) {
+  // Strip the H1 title (already shown in card) and check if there's real content
+  const stripped = md.replace(/^#\s+.+$/m, '').trim();
+  // Check if there's content beyond just empty section headers
+  const hasContent = stripped.replace(/^##\s+.+$/gm, '').trim().length > 0;
+
+  const html = marked.parse(md);
+  el.innerHTML = html;
+  el.classList.add('loaded');
 }
 
 function deselectAll() {
