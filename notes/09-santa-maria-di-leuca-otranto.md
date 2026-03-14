@@ -4,10 +4,13 @@
 - 63 km, +650 m
 
 ## A voir
-- Cathedrale d'Otranto (mosaique medievale)
-- Chateau aragonais
+- Côte adriatique vers le nord : Tricase Porto, Castro Marina (en route)
+- Cathédrale d'Otranto (mosaïque médiévale)
+- Château aragonais
+- Otranto = ville la plus orientale d'Italie
 
 ## Restaurants
+- Fruits de mer recommandés à Otranto
 
 ## Notes
 
