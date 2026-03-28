@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Italie 2026 — Notre voyage</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf8f5;
+      --card: #ffffff;
+      --accent: #b5543a;
+      --accent-light: #e8c4b8;
+      --text: #2c2c2c;
+      --text-muted: #7a7a7a;
+      --border: #e8e4df;
+      --shadow: 0 2px 12px rgba(0,0,0,.08);
+      --bike: #2d7a4f;
+      --flight: #3b6fa0;
+      --train: #8b6914;
+      --bus: #7a4a8c;
+      --visit: #b5543a;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+      background: linear-gradient(135deg, #3b2f2f 0%, #5a3e36 50%, #6b4c3b 100%);
+      color: #fff;
+      position: relative;
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 48px;
+      height: 48px;
+      background: var(--bg);
+      border-radius: 50%;
+      border: 4px solid var(--accent);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23b5543a'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 24px;
+    }
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+    header p {
+      margin-top: .5rem;
+      font-size: 1.05rem;
+      opacity: .85;
+      font-weight: 300;
+    }
+
+    /* ── Stats bar ── */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      padding: 2.5rem 1rem 1.5rem;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .stat-label {
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-muted);
+      margin-top: .15rem;
+    }
+
+    /* ── Layout ── */
+    .container {
+      display: flex;
+      gap: 0;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    @media (max-width: 900px) {
+      .container { flex-direction: column; }
+    }
+
+    /* ── Map ── */
+    .map-wrap {
+      flex: 1;
+      min-height: 500px;
+      position: sticky;
+      top: 1rem;
+      align-self: flex-start;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    #map { width: 100%; height: 600px; }
+    @media (max-width: 900px) {
+      .map-wrap {
+        position: relative;
+        top: 0;
+        min-height: 0;
+        width: 100%;
+        flex: none;
+      }
+      #map { height: 45vh; min-height: 280px; }
+    }
+
+    /* ── Timeline ── */
+    .timeline {
+      flex: 1;
+      padding: 0 1rem 2rem 2rem;
+      max-width: 560px;
+    }
+    @media (max-width: 900px) {
+      .timeline { max-width: 100%; padding: 1rem 0 2rem; }
+    }
+
+    .day-card {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.1rem 1.2rem;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      transition: box-shadow .2s, transform .15s, border-color .2s;
+    }
+    .day-card:hover {
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+    .day-card.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-light), var(--shadow);
+    }
+
+    /* left accent bar */
+    .day-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 12px; bottom: 12px;
+      width: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      transition: background .2s;
+    }
+    .day-card.active::before { background: var(--accent); }
+    .day-card.type-bike::before { background: var(--bike); }
+    .day-card.type-flight::before { background: var(--flight); }
+    .day-card.type-train::before { background: var(--train); }
+    .day-card.type-bus::before { background: var(--bus); }
+    .day-card.type-visit::before { background: var(--visit); }
+
+    .day-date {
+      font-size: .78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 500;
+    }
+    .day-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: .25rem 0;
+    }
+    .day-badges {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin: .4rem 0;
+    }
+    .badge {
+      font-size: .72rem;
+      padding: .2rem .55rem;
+      border-radius: 20px;
+      font-weight: 500;
+      letter-spacing: .02em;
+    }
+    .badge-bike { background: #e6f4ec; color: var(--bike); }
+    .badge-flight { background: #e3eef7; color: var(--flight); }
+    .badge-train { background: #f5eed8; color: var(--train); }
+    .badge-bus { background: #f0e6f5; color: var(--bus); }
+    .badge-visit { background: #fae8e2; color: var(--visit); }
+
+    .day-details {
+      font-size: .85rem;
+      color: var(--text-muted);
+      margin-top: .35rem;
+    }
+
+    /* ── Notes ── */
+    .day-notes {
+      display: none;
+      margin-top: .75rem;
+      padding-top: .75rem;
+      border-top: 1px dashed var(--border);
+    }
+    .day-card.active .day-notes.loaded { display: block; }
+    .day-notes h1 { display: none; }
+    .day-notes h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: .6rem 0 .25rem;
+    }
+    .day-notes h2:first-child { margin-top: 0; }
+    .day-notes p, .day-notes li {
+      font-size: .82rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+    .day-notes ul { padding-left: 1.2rem; margin: .2rem 0; }
+    .day-notes a { color: var(--accent); text-decoration: underline; }
+    .day-notes-empty {
+      font-size: .8rem;
+      color: var(--border);
+      font-style: italic;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: .8rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Leaflet popup ── */
+    .leaflet-popup-content-wrapper {
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+    }
+    .leaflet-popup-content { font-size: .85rem; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Italie 2026</h1>
+  <p>Puglia a velo &middot; 17 avril &ndash; 1<sup>er</sup> mai</p>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="stat-value">15</div><div class="stat-label">Jours</div></div>
+  <div class="stat"><div class="stat-value">~509</div><div class="stat-label">km a velo</div></div>
+  <div class="stat"><div class="stat-value">~3 665</div><div class="stat-label">m denivele +</div></div>
+  <div class="stat"><div class="stat-value">8</div><div class="stat-label">Etapes velo</div></div>
+  <div class="stat"><div class="stat-value">6</div><div class="stat-label">Villes</div></div>
+</div>
+
+<div class="container">
+  <div class="map-wrap">
+    <div id="map"></div>
+  </div>
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<footer>Italie 2026 &mdash; Voyage planifie avec soin</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/marked@15.0.7/marked.min.js"></script>
+<script>
+// ── Data ──
+const days = [
+  {
+    date: "Ven 17 avril", title: "Montreal → Rome",
+    type: "flight", badges: ["flight"],
+    details: "Vol Air Canada AC 892, YUL → FCO, 19 h 10 → 18 avr 9 h 15.",
+    noteFile: "notes/01-montreal-rome.md",
+    coords: [[45.5017, -73.5673], [41.9028, 12.4964]],
+    center: [46.0, -30.0], zoom: 3
+  },
+  {
+    date: "Sam 18 avril", title: "Rome → Bari",
+    type: "flight", badges: ["flight"],
+    details: "Vol ITA 1613 FCO → BRI 13 h 30–14 h 35. Nuit : Dilman Luxury Stay, Bari.",
+    noteFile: "notes/02-rome-bari.md",
+    coords: [[41.9028, 12.4964], [41.1240, 16.8716]],
+    center: [41.5, 14.7], zoom: 7
+  },
+  {
+    date: "Dim 19 avril — Jour 1", title: "Bari → Matera",
+    type: "bus", badges: ["bus"],
+    details: "Bus Bari–Matera. Installation, visite des Sassi. Nuit : Hotel le Origini, Matera.",
+    noteFile: "notes/03-bari-matera.md",
+    coords: [[41.1240, 16.8716], [40.6706, 16.6092]],
+    center: [40.89, 16.74], zoom: 10
+  },
+  {
+    date: "Lun 20 avril — Jour 2", title: "Matera → Alberobello",
+    type: "bike", badges: ["bike"],
+    details: "76 km · +650 m. Nuit : Il Gabellota Resort, Alberobello.",
+    distance: 76, elevation: 650,
+    noteFile: "notes/04-matera-alberobello.md",
+    coords: [[40.6706, 16.6092], [40.7823, 17.2235]],
+    center: [40.72, 16.92], zoom: 10
+  },
+  {
+    date: "Mar 21 avril — Jour 3", title: "Alberobello → Ostuni",
+    type: "bike", badges: ["bike"],
+    details: "52 km · +600 m. Nuit : Ostuni Palace, Ostuni.",
+    distance: 52, elevation: 600,
+    noteFile: "notes/05-alberobello-ostuni.md",
+    coords: [[40.7823, 17.2235], [40.7294, 17.5839]],
+    center: [40.76, 17.41], zoom: 11
+  },
+  {
+    date: "Mer 22 avril — Jour 4", title: "Ostuni → Manduria",
+    type: "bike", badges: ["bike"],
+    details: "70 km · +250 m. Nuit : Manduria BHB, Manduria.",
+    distance: 70, elevation: 250,
+    noteFile: "notes/06-ostuni-manduria.md",
+    coords: [[40.7294, 17.5839], [40.4005, 17.6243]],
+    center: [40.56, 17.61], zoom: 10
+  },
+  {
+    date: "Jeu 23 avril — Jour 5", title: "Manduria → Gallipoli",
+    type: "bike", badges: ["bike"],
+    details: "70 km · +350 m. Nuit : Bastioni San Domenico, Gallipoli.",
+    distance: 70, elevation: 350,
+    noteFile: "notes/07-manduria-gallipoli.md",
+    coords: [[40.4005, 17.6243], [40.0527, 17.9746]],
+    center: [40.23, 17.81], zoom: 10
+  },
+  {
+    date: "Ven 24 avril — Jour 6", title: "Gallipoli → Santa Maria di Leuca",
+    type: "bike", badges: ["bike"],
+    details: "52–75 km · +230–530 m. Nuit : Hotel La Meridiana, Santa Maria di Leuca.",
+    distance: 63, elevation: 380,
+    noteFile: "notes/08-gallipoli-santa-maria-di-leuca.md",
+    coords: [[40.0527, 17.9746], [39.7970, 18.3573]],
+    center: [39.93, 18.17], zoom: 10
+  },
+  {
+    date: "Sam 25 avril — Jour 7", title: "Santa Maria di Leuca → Otranto",
+    type: "bike", badges: ["bike"],
+    details: "63 km · +650 m. Nuit : Dimora San Giuseppe, Otranto.",
+    distance: 63, elevation: 650,
+    noteFile: "notes/09-santa-maria-di-leuca-otranto.md",
+    coords: [[39.7970, 18.3573], [40.1420, 18.4923]],
+    center: [39.97, 18.42], zoom: 10
+  },
+  {
+    date: "Dim 26 avril — Jour 8", title: "Otranto → Lecce",
+    type: "bike", badges: ["bike"],
+    details: "56 km · +285 m. Nuit : Palazzo Paisiello, Lecce.",
+    distance: 56, elevation: 285,
+    noteFile: "notes/10-otranto-lecce.md",
+    coords: [[40.1420, 18.4923], [40.3553, 18.1684]],
+    center: [40.25, 18.33], zoom: 10
+  },
+  {
+    date: "Lun 27 avril — Jour 9", title: "Lecce → Naples",
+    type: "train", badges: ["train"],
+    details: "Fin apres dejeuner. Train Lecce → Napoli Centrale (~5 h 30–6 h). Nuit : Starhotels Terminus.",
+    noteFile: "notes/11-lecce-naples.md",
+    coords: [[40.3553, 18.1684], [40.8517, 14.2715]],
+    center: [40.6, 16.2], zoom: 7
+  },
+  {
+    date: "Mar 28 avril", title: "Naples → Rome",
+    type: "train", badges: ["train"],
+    details: "Train Naples → Rome. Installation Hotel Ponte Sisto.",
+    noteFile: "notes/12-naples-rome.md",
+    coords: [[40.8517, 14.2715], [41.8933, 12.4719]],
+    center: [41.4, 13.4], zoom: 7
+  },
+  {
+    date: "Mer 29 avril", title: "Rome",
+    type: "visit", badges: ["visit"],
+    details: "Journee libre a Rome. Nuit Hotel Ponte Sisto.",
+    noteFile: "notes/13-rome-jour-1.md",
+    coords: [[41.8933, 12.4719]],
+    center: [41.8933, 12.4719], zoom: 15
+  },
+  {
+    date: "Jeu 30 avril", title: "Rome",
+    type: "visit", badges: ["visit"],
+    details: "Journee libre a Rome. Nuit Hotel Ponte Sisto.",
+    noteFile: "notes/14-rome-jour-2.md",
+    coords: [[41.8933, 12.4719]],
+    center: [41.8933, 12.4719], zoom: 15
+  },
+  {
+    date: "Ven 1 mai", title: "Rome → Montreal",
+    type: "flight", badges: ["flight"],
+    details: "Vol Air Canada AC 893, FCO → YUL, 11 h 30 → 14 h 15.",
+    noteFile: "notes/15-rome-montreal.md",
+    coords: [[41.8933, 12.4719], [45.5017, -73.5673]],
+    center: [46.0, -30.0], zoom: 3
+  }
+];
+
+const badgeLabels = {
+  bike: "Velo", flight: "Vol", train: "Train", bus: "Bus", visit: "Visite"
+};
+const badgeClasses = {
+  bike: "badge-bike", flight: "badge-flight", train: "badge-train",
+  bus: "badge-bus", visit: "badge-visit"
+};
+const lineColors = {
+  bike: "#2d7a4f", flight: "#3b6fa0", train: "#8b6914",
+  bus: "#7a4a8c", visit: "#b5543a"
+};
+
+// ── Map ──
+const map = L.map('map', { zoomControl: true, scrollWheelZoom: true });
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  maxZoom: 19
+}).addTo(map);
+
+// Fit to the Puglia cycling region by default
+map.setView([40.5, 17.0], 7);
+
+// All route lines
+const allLines = [];
+const allMarkers = [];
+
+function createIcon(type) {
+  const colors = { bike: '#2d7a4f', flight: '#3b6fa0', train: '#8b6914', bus: '#7a4a8c', visit: '#b5543a' };
+  const icons = { bike: '🚴', flight: '✈️', train: '🚆', bus: '🚌', visit: '📍' };
+  const color = colors[type] || '#b5543a';
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      background:${color}; color:#fff; width:30px; height:30px;
+      border-radius:50%; display:flex; align-items:center; justify-content:center;
+      font-size:15px; box-shadow:0 2px 6px rgba(0,0,0,.3); border:2px solid #fff;
+    ">${icons[type] || '📍'}</div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    popupAnchor: [0, -18]
+  });
+}
+
+// Draw the full route overview
+days.forEach((d, i) => {
+  if (d.coords.length === 2) {
+    const line = L.polyline(d.coords, {
+      color: lineColors[d.type],
+      weight: d.type === 'bike' ? 4 : 3,
+      opacity: 0.7,
+      dashArray: d.type === 'flight' ? '8 8' : d.type === 'train' ? '6 4' : d.type === 'bus' ? '4 6' : null
+    }).addTo(map);
+    allLines.push(line);
+  }
+  // Marker at destination (last coord)
+  const dest = d.coords[d.coords.length - 1];
+  const marker = L.marker(dest, { icon: createIcon(d.type) })
+    .bindPopup(`<strong>${d.title}</strong><br>${d.details}`)
+    .addTo(map);
+  allMarkers.push(marker);
+});
+
+// Fit all markers
+if (allMarkers.length) {
+  const group = L.featureGroup(allMarkers);
+  map.fitBounds(group.getBounds().pad(0.1));
+}
+
+// Ensure Leaflet recalculates container size (fixes mobile)
+setTimeout(() => map.invalidateSize(), 200);
+
+// ── Timeline ──
+const timeline = document.getElementById('timeline');
+
+days.forEach((d, i) => {
+  const card = document.createElement('div');
+  card.className = `day-card type-${d.type}`;
+  card.dataset.index = i;
+
+  const badgesHtml = d.badges.map(b =>
+    `<span class="badge ${badgeClasses[b]}">${badgeLabels[b]}</span>`
+  ).join('');
+
+  const distHtml = d.distance
+    ? `<span class="badge badge-bike">${d.distance} km</span><span class="badge badge-bike">+${d.elevation} m</span>`
+    : '';
+
+  card.innerHTML = `
+    <div class="day-date">${d.date}</div>
+    <div class="day-title">${d.title}</div>
+    <div class="day-badges">${badgesHtml}${distHtml}</div>
+    <div class="day-details">${d.details}</div>
+    <div class="day-notes" id="notes-${i}"></div>
+  `;
+
+  card.addEventListener('click', () => selectDay(i));
+  timeline.appendChild(card);
+});
+
+let activeIndex = -1;
+let activeHighlightLine = null;
+
+function selectDay(i) {
+  // Toggle
+  if (activeIndex === i) {
+    deselectAll();
+    return;
+  }
+  activeIndex = i;
+  const d = days[i];
+
+  // Cards
+  document.querySelectorAll('.day-card').forEach((c, ci) => {
+    c.classList.toggle('active', ci === i);
+  });
+
+  // Remove old highlight
+  if (activeHighlightLine) { map.removeLayer(activeHighlightLine); activeHighlightLine = null; }
+
+  // Instant view change (no animation = no SVG glitch)
+  map.setView(d.center, d.zoom, { animate: false });
+
+  // Add highlight line after view is set
+  if (d.coords.length === 2) {
+    activeHighlightLine = L.polyline(d.coords, {
+      color: lineColors[d.type],
+      weight: 6,
+      opacity: 1
+    }).addTo(map);
+  }
+
+  // Open popup
+  allMarkers[i].openPopup();
+
+  // Load notes
+  loadNotes(i, d.noteFile);
+}
+
+// ── Notes loading ──
+const notesCache = {
+  "notes/01-montreal-rome.md": "# Montreal \u2192 Rome\n\n## Vol\n- Air Canada AC 892, YUL \u2192 FCO\n- Depart 19 h 10, arrivee 18 avr 9 h 15\n\n## Notes\n\n",
+  "notes/02-rome-bari.md": "# Rome \u2192 Bari\n\n## Vol\n- ITA 1613 FCO \u2192 BRI, 13 h 30 \u2013 14 h 35\n\n## Hebergement\n- Dilman Luxury Stay, Bari\n\n## Notes\nprendre bus 16 pour se rendre en ville de a\u00e9roport\n\nLa Strada delle Orecciette\n\nune ville de street food\n",
+  "notes/03-bari-matera.md": "# Bari \u2192 Matera\n\n## Transport\n- Bus Bari \u2013 Matera (a organiser)\n\n## Hebergement\n- Hotel le Origini \\*\\*\\*\\*, Via D'Addozio 5, 75100 Matera \u2014 tel. +39 083 533 0969\n- [Google Maps](https://www.google.com/maps/place/Le+Origini+Suites+%26+Rooms/@40.6706226,16.6091831,17z/data=!4m9!3m8!1s0x13477f20ed34d613:0x18296ec4516d45af!5m2!4m1!1i2!8m2!3d40.6706226!4d16.6091831!16s%2Fg%2F11c499h22x) \u00b7 [Site web](https://www.hotelleorigini.it)\n\n## A voir\n- Les Sassi di Matera (UNESCO) \u2014 deux quartiers : Sasso Barisano (plus touristique) et Sasso Caveoso (plus brut, authentique). Se perdre dans les ruelles.\n- Casa Grotta \u2014 maison-grotte reconstitu\u00e9e, montre la vie dans les Sassi jusque dans les ann\u00e9es 1950. ~3 EUR, rapide et fascinant.\n- Belvedere Murgia Timone \u2014 de l'autre c\u00f4t\u00e9 du canyon, vue spectaculaire sur les Sassi. Id\u00e9al pour le coucher de soleil.\n- \u00c9glises rupestres \u2014 Santa Maria de Idris (fresques byzantines), Santa Lucia alle Malve, San Pietro Barisano (plus grande \u00e9glise souterraine).\n- Cath\u00e9drale de Matera \u2014 au sommet de la Civita, entre les deux Sassi. Style roman, belle vue du parvis.\n- Palombaro Lungo \u2014 citerne souterraine g\u00e9ante sous la Piazza Vittorio Veneto. Visite guid\u00e9e ~30 min.\n\n## Restaurants\n\n## Notes\n- Journ\u00e9e libre \u00e0 l'arriv\u00e9e \u2014 visiter selon l'heure d'arriv\u00e9e\n\n",
+  "notes/04-matera-alberobello.md": "# Matera \u2192 Alberobello\n\n## Etape velo\n- 76 km, +650 m\n- Livraison du v\u00e9lo + carte routi\u00e8re + rencontre d'accueil (en anglais)\n- Parcours \u00e0 travers la Murgia sud\n\n## Hebergement\n- Il Gabellota Resort \\*\\*\\*, Strada Comunale Gabellota 5, 70011 Alberobello \u2014 tel. +39 080 432 2277\n- [Google Maps](https://www.google.com/maps/place/Il+Gabellota/@40.7822539,17.2235165,17z/data=!4m9!3m8!1s0x1347b2636ecbbd0d:0x1a1af4aa6d6361e4!5m2!4m1!1i2!8m2!3d40.7822539!4d17.2235165!16s%2Fg%2F11b6d7dzlf) \u00b7 [Site web](https://www.ilgabellota.it)\n\n## A voir\n- Trulli d'Alberobello (UNESCO depuis 1996) \u2014 ~1500 trulli r\u00e9partis dans les quartiers Monti (le plus touristique) et Aia Piccola (plus r\u00e9sidentiel, plus calme)\n\n## Restaurants\n- R\u00e9server d'avance (tr\u00e8s demand\u00e9)\n\n## Notes\n\n",
+  "notes/05-alberobello-ostuni.md": "# Alberobello \u2192 Ostuni\n\n## Etape velo\n- 52 km, +600 m\n- Vall\u00e9e d'Itria : oliviers, vignes, trulli, sol rouge\n\n## Hebergement\n- Ostuni Palace \\*\\*\\*\\*, Corso Vittorio Emanuele II, 72017 Ostuni \u2014 tel. +39 083 133 8885\n- [Google Maps](https://www.google.com/maps/place/Ostuni+Palace/@40.7293739,17.58391,17z/data=!3m1!5s0x1346435aed2a32c5:0x942434aeae799ecf!4m9!3m8!1s0x1346435aecec09fd:0xbac534440cf3cd87!5m2!4m1!1i2!8m2!3d40.7293739!4d17.58391!16s%2Fg%2F1txd6h2p) \u00b7 [Site web](https://ostunipalace.com)\n\n## A voir\n- **Locorotondo** \u2014 arr\u00eat ap\u00e9ritif, go\u00fbter le vin blanc local produit dans la r\u00e9gion\n- **Martina Franca** \u2014 centre historique bien conserv\u00e9, belle place centrale, palais majestueux aux balcons imposants\n- **Cisternino** \u2014 \u00ab bombette \u00bb (roulades de viande, sp\u00e9cialit\u00e9 locale) dans une des braceries typiques\n- Ostuni, la \"ville blanche\" \u2014 Chiesa Madre au point culminant, vues sur la campagne depuis la vieille ville en haut de la colline\n\n## Restaurants\n- Arr\u00eat d\u00eener recommand\u00e9 dans un \u00ab fornello pronto \u00bb (boucherie typique \u2014 on choisit la viande et on la fait cuire sur place)\n\n## Notes\n\n",
+  "notes/06-ostuni-manduria.md": "# Ostuni \u2192 Manduria\n\n## Etape velo\n- 70 km, +250 m\n\n## Hebergement\n- Manduria BHB \\*\\*\\*\\*, Via Roma 84, Manduria \u2014 tel. +39 342 337 1727\n- [Google Maps](https://www.google.com/maps/place/BHB+HOTEL+MANDURIA/@40.4004863,17.6242699,17z/data=!4m9!3m8!1s0x1346f281286d9975:0xf242017f8906aae5!5m2!4m1!1i2!8m2!3d40.4004863!4d17.6242699!16s%2Fg%2F11c604fgg4) \u00b7 [Site web](https://www.bhbhotel.it)\n\n## A voir\n- San Vito dei Normanni : ch\u00e2teau de Fr\u00e9d\u00e9ric sur la place de la ville\n- Ch\u00e2teaux \u00e0 Mesagne et Oria (en route)\n- D\u00e9gustation de Primitivo di Manduria (vin rouge local r\u00e9put\u00e9 mondialement)\n- Mus\u00e9e de la Civilisation du Vin Primitivo \u2014 \u00e0 ne pas manquer \u00e0 Manduria\n\n## Restaurants\n\n## Notes\n- Route de campagne, \u00e9tape relativement plate (+250 m)\n\n",
+  "notes/07-manduria-gallipoli.md": "# Manduria \u2192 Gallipoli\n\n## Etape velo\n- 70 km, +350 m\n\n## Hebergement\n- Bastioni San Domenico \\*\\*\\*\\*, Bastioni San Domenico, 73014 Gallipoli \u2014 tel. +39 083 326 3607\n- [Google Maps](https://www.google.com/maps/place/I+Bastioni+San+Domenico+-+Boutique+Hotel/@40.052734,17.974584,17z/data=!4m9!3m8!1s0x1346a7c43861f09b:0x798060ef40e24be!5m2!4m1!1i2!8m2!3d40.052734!4d17.974584!16s%2Fg%2F11f64cn_1c) \u00b7 [Site web](https://www.ibastionisandomenico.com)\n\n## A voir\n- C\u00f4te ouest du Salento : Campo Marino, Porto Cesareo (en route)\n- Centre historique de Gallipoli \u2014 ville sur une \u00eele reli\u00e9e \u00e0 la terre ferme par un pont\n- Belles plages de sable\n- \u00c9glises baroques et palais d'aristocrates\n- Labyrinthe de petites rues \u2192 promenade bord de mer avec vues panoramiques\n\n## Restaurants\n\n## Notes\n\n",
+  "notes/08-gallipoli-santa-maria-di-leuca.md": "# Gallipoli \u2192 Santa Maria di Leuca\n\n## Etape velo\n- 52\u201375 km, +230\u2013530 m\n\n## Hebergement\n- Hotel La Meridiana \\*\\*\\*\\*, Lungomare C. Colombo 61, 73040 Santa Maria di Leuca \u2014 tel. +39 083 375 8242\n- [Google Maps](https://www.google.com/maps/place/Villa+La+Meridiana/@39.7969888,18.3573185,17z/data=!3m1!5s0x1343f58cb99d160f:0x2e3174a1059c4456!4m9!3m8!1s0x1343f5f2477d673d:0xb90a018b2cc5d3a5!5m2!4m1!1i2!8m2!3d39.7969888!4d18.3573185!16s%2Fg%2F1hf4lmxsh) \u00b7 [Site web](https://www.carolihotels.com)\n\n## A voir\n- Balade v\u00e9lo dans la vieille ville de Gallipoli au d\u00e9part\n- C\u00f4te ionienne direction Torre San Giovanni \u2014 plage/baignade possible\n- Ugento \u2014 petite ville historique \u00e0 l'int\u00e9rieur des terres (en route)\n- Specchia : d\u00e9tour int\u00e9rieur, un des plus beaux \u00ab borghi \u00bb d'Italie\n- Basilica de Santa Maria de Finibus Terrae\n- Pointe du talon de la botte \u2014 jonction mer Ionienne et Adriatique\n\n## Restaurants\n\n## Notes\n- 2 itin\u00e9raires possibles : court (52 km, +230 m) ou long (71 km, +530 m) via Specchia\n\n",
+  "notes/09-santa-maria-di-leuca-otranto.md": "# Santa Maria di Leuca \u2192 Otranto\n\n## Etape velo\n- 63 km, +650 m\n\n## Hebergement\n- Hotel Dimora San Giuseppe \\*\\*\\*\\*, Via Ottocento Martiri 60, 73028 Otranto \u2014 tel. +39 083 680 2298\n- [Google Maps](https://www.google.com/maps/place/Dimora+San+Giuseppe+Hotel+%26+SPA/@40.1419729,18.4922523,17z/data=!4m9!3m8!1s0x134441095aacbdd1:0xa054e2f36fc16e67!5m2!4m1!1i2!8m2!3d40.1419729!4d18.4922523!16s%2Fg%2F1tfjbtwp) \u00b7 [Site web](https://www.hotelsangiuseppeotranto.it)\n\n## A voir\n- C\u00f4te adriatique vers le nord : Tricase Porto, Castro Marina (en route)\n- Cath\u00e9drale d'Otranto \u2014 mosa\u00efque m\u00e9di\u00e9vale au sol (comparable \u00e0 celles de Ravenne), reliquaire des 813 martyrs derri\u00e8re l'autel\n- Ch\u00e2teau aragonais\n- Otranto = ville la plus orientale d'Italie\n- Ruelles anim\u00e9es avec petites boutiques de souvenirs\n\n## Restaurants\n- Fruits de mer recommand\u00e9s \u00e0 Otranto\n\n## Notes\n\n",
+  "notes/10-otranto-lecce.md": "# Otranto \u2192 Lecce\n\n## Etape velo\n- 56 km, +285 m\n\n## Hebergement\n- Palazzo Paisiello \\*\\*\\*\\*, Piazzetta Bonifacio IX 4, 73100 Lecce \u2014 tel. +39 392 225 3596\n- [Google Maps](https://www.google.com/maps/place/Palazzo+Paisiello+-+Luxury+Rooms+Lecce/@40.3553202,18.168357,17z/data=!4m9!3m8!1s0x13442f0e188b0779:0x8863af0325807bd2!5m2!4m1!1i2!8m2!3d40.3553202!4d18.168357!16s%2Fg%2F11w21bmd25) \u00b7 [Site web](https://www.palazzopaisiello.it)\n\n## A voir\n- Cath\u00e9drale d'Otranto le matin avant de partir (rosace + mosa\u00efque au sol + reliquaire des 813 martyrs)\n- Laghi Alimini (en route)\n- Torre Dell'Orso : plage incontournable, baignade\n- Grotta della Poesia \u2014 grotte naturelle ouverte, baignade dans des eaux cristallines (pr\u00e8s de Torre dell'Orso)\n- Acaya : espresso devant le ch\u00e2teau (arr\u00eat fin d'apr\u00e8s-midi)\n- Basilica di Santa Croce (Lecce)\n- Piazza del Duomo (Lecce)\n- \"Florence du Sud\" \u2014 architecture baroque\n\n## Restaurants\n- **Pasticciotti** \u2014 p\u00e2tisserie typique de Lecce (p\u00e2te sabl\u00e9e + cr\u00e8me p\u00e2tissi\u00e8re), \u00e0 go\u00fbter absolument\n- **Rustici leccesi** \u2014 feuillet\u00e9s sal\u00e9s farcis (b\u00e9chamel, mozzarella, tomate), parfaits pour un lunch rapide\n\n## Notes\n\n",
+  "notes/11-lecce-naples.md": "# Lecce \u2192 Naples\n\n## Transport\n- Train Lecce \u2192 Napoli Centrale (~5 h 30 \u2013 6 h)\n\n## Hebergement\n- Starhotels Terminus, Naples (\u00e0 c\u00f4t\u00e9 de la gare Centrale)\n\n## A voir (soir\u00e9e)\n- Spaccanapoli \u2014 la rue qui coupe Naples en deux, anim\u00e9e le soir, \u00e9glises baroques. ~15 min \u00e0 pied de la gare.\n- Via dei Tribunali \u2014 parall\u00e8le \u00e0 Spaccanapoli, LA rue de la pizza. Vivante le soir.\n- Piazza del Plebiscito \u2014 grande place majestueuse, belle de nuit. ~25 min \u00e0 pied ou m\u00e9tro (Municipio).\n- Lungomare / Castel dell'Ovo \u2014 promenade bord de mer avec vue sur le V\u00e9suve au coucher du soleil.\n- Naples souterraine (Napoli Sotterranea) \u2014 visites guid\u00e9es parfois en soir\u00e9e, v\u00e9rifier les horaires.\n\n## Restaurants (pizza!)\n- L'Antica Pizzeria Da Michele \u2014 la plus c\u00e9l\u00e8bre. Seulement Margherita ou Marinara. File d'attente, y aller t\u00f4t (~18h30).\n- Sorbillo \u2014 Via dei Tribunali, autre institution. File aussi.\n- Di Matteo \u2014 Via dei Tribunali, moins de file, pizza frite excellente.\n- 50 Kal\u00f2 \u2014 Piazza Sannazaro, parmi les meilleures au monde. Plus chic.\n\n## Notes\n- Fin du s\u00e9jour v\u00e9lo apr\u00e8s le d\u00e9jeuner \u00e0 Lecce (retour du v\u00e9lo)\n- Le quartier autour de la gare est un peu rough \u2014 marcher vers Spaccanapoli/Tribunali (10-15 min) pour l'ambiance\n- Faire attention aux pickpockets dans les zones touristiques\n\n",
+  "notes/12-naples-rome.md": "# Naples \u2192 Rome\n\n## Transport\n- Train Naples \u2192 Rome (~1 h 16)\n\n## Hebergement\n- Hotel Ponte Sisto, Rome\n\n## Notes\n\n",
+  "notes/13-rome-jour-1.md": "# Rome \u2014 Jour 1\n\n## A voir\n- Quartier Trastevere \u2014 juste \u00e0 c\u00f4t\u00e9 de l'h\u00f4tel. Parfait pour fl\u00e2ner, manger, ambiance village.\n- Terrasse du Pincio / Villa Borghese \u2014 vue panoramique sur Rome, balade dans les jardins.\n- Basilique Saint-Cl\u00e9ment \u2014 3 niveaux superpos\u00e9s : \u00e9glise du 12e, \u00e9glise du 4e si\u00e8cle, temple romain en dessous. Fascinant.\n- Quartier Testaccio \u2014 le vrai quartier populaire romain, march\u00e9 couvert, street food.\n- Via Appia Antica \u2014 balade \u00e0 pied ou v\u00e9lo sur la route antique, catacombes.\n- Panth\u00e9on \u2014 gratuit, toujours impressionnant (r\u00e9server un cr\u00e9neau gratuit en ligne)\n\n## Restaurants\n\n## Notes\n\n",
+  "notes/14-rome-jour-2.md": "# Rome \u2014 Jour 2\n\n## A voir\n\n## Restaurants\n\n## Notes\n\n",
+  "notes/15-rome-montreal.md": "# Rome \u2192 Montreal\n\n## Vol\n- Air Canada AC 893, FCO \u2192 YUL\n- Depart 11 h 30, arrivee 14 h 15\n\n## Notes\n\n"
+};
+
+async function loadNotes(i, noteFile) {
+  const el = document.getElementById('notes-' + i);
+  if (!el || !noteFile) return;
+  if (el.classList.contains('loaded')) return;
+
+  if (notesCache[noteFile]) {
+    renderNotes(el, notesCache[noteFile]);
+    return;
+  }
+
+  try {
+    const res = await fetch(noteFile + '?t=' + Date.now());
+    if (!res.ok) return;
+    const md = await res.text();
+    notesCache[noteFile] = md;
+    renderNotes(el, md);
+  } catch (e) { /* silently fail */ }
+}
+
+function renderNotes(el, md) {
+  // Strip the H1 title (already shown in card) and check if there's real content
+  const stripped = md.replace(/^#\s+.+$/m, '').trim();
+  // Check if there's content beyond just empty section headers
+  const hasContent = stripped.replace(/^##\s+.+$/gm, '').trim().length > 0;
+
+  const html = marked.parse(md);
+  el.innerHTML = html;
+  el.classList.add('loaded');
+}
+
+function deselectAll() {
+  activeIndex = -1;
+  document.querySelectorAll('.day-card').forEach(c => c.classList.remove('active'));
+  if (activeHighlightLine) { map.removeLayer(activeHighlightLine); activeHighlightLine = null; }
+  map.closePopup();
+  if (allMarkers.length) {
+    const group = L.featureGroup(allMarkers);
+    map.fitBounds(group.getBounds().pad(0.1));
+  }
+}
+</script>
+
+</body>
+</html>
