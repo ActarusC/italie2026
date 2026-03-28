@@ -9,8 +9,10 @@
 - [Google Maps](https://www.google.com/maps/place/Ostuni+Palace/@40.7293739,17.58391,17z/data=!3m1!5s0x1346435aed2a32c5:0x942434aeae799ecf!4m9!3m8!1s0x1346435aecec09fd:0xbac534440cf3cd87!5m2!4m1!1i2!8m2!3d40.7293739!4d17.58391!16s%2Fg%2F1txd6h2p) · [Site web](https://ostunipalace.com)
 
 ## A voir
-- Villages blancs en route : Locorotondo, Martina Franca, Cisternino
-- Ostuni, la "ville blanche" — Chiesa Madre au point culminant
+- **Locorotondo** — arrêt apéritif, goûter le vin blanc local produit dans la région
+- **Martina Franca** — centre historique bien conservé, belle place centrale, palais majestueux aux balcons imposants
+- **Cisternino** — « bombette » (roulades de viande, spécialité locale) dans une des braceries typiques
+- Ostuni, la "ville blanche" — Chiesa Madre au point culminant, vues sur la campagne depuis la vieille ville en haut de la colline
 
 ## Restaurants
 - Arrêt dîner recommandé dans un « fornello pronto » (boucherie typique — on choisit la viande et on la fait cuire sur place)

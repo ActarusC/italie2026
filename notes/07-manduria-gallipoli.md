@@ -9,9 +9,10 @@
 
 ## A voir
 - Côte ouest du Salento : Campo Marino, Porto Cesareo (en route)
-- Centre historique de Gallipoli (île fortifiée)
+- Centre historique de Gallipoli — ville sur une île reliée à la terre ferme par un pont
+- Belles plages de sable
 - Églises baroques et palais d'aristocrates
-- Labyrinthe de petites rues → promenade bord de mer
+- Labyrinthe de petites rues → promenade bord de mer avec vues panoramiques
 
 ## Restaurants
 

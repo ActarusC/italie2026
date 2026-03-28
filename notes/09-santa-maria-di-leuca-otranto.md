@@ -9,9 +9,10 @@
 
 ## A voir
 - Côte adriatique vers le nord : Tricase Porto, Castro Marina (en route)
-- Cathédrale d'Otranto (mosaïque médiévale)
+- Cathédrale d'Otranto — mosaïque médiévale au sol (comparable à celles de Ravenne), reliquaire des 813 martyrs derrière l'autel
 - Château aragonais
 - Otranto = ville la plus orientale d'Italie
+- Ruelles animées avec petites boutiques de souvenirs
 
 ## Restaurants
 - Fruits de mer recommandés à Otranto

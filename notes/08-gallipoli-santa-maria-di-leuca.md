@@ -10,6 +10,7 @@
 ## A voir
 - Balade vélo dans la vieille ville de Gallipoli au départ
 - Côte ionienne direction Torre San Giovanni — plage/baignade possible
+- Ugento — petite ville historique à l'intérieur des terres (en route)
 - Specchia : détour intérieur, un des plus beaux « borghi » d'Italie
 - Basilica de Santa Maria de Finibus Terrae
 - Pointe du talon de la botte — jonction mer Ionienne et Adriatique

@@ -11,6 +11,7 @@
 - San Vito dei Normanni : château de Frédéric sur la place de la ville
 - Châteaux à Mesagne et Oria (en route)
 - Dégustation de Primitivo di Manduria (vin rouge local réputé mondialement)
+- Musée de la Civilisation du Vin Primitivo — à ne pas manquer à Manduria
 
 ## Restaurants
 
